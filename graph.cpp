@@ -65,7 +65,7 @@ int Graph::get_node(uint64_t node_id){
 
 // return 1 on success, 0 if the edge does not exist, -1 if either node does not exist
 int Graph::get_edge(uint64_t a, uint64_t b){
-	if (nodes.find(a) == nodes.end() || nodes.find(b) == nodes.end())
+	if (a==b || nodes.find(a) == nodes.end() || nodes.find(b) == nodes.end())
 		return -1;
 	if (nodes[a].find(b) == nodes[a].end())
 		return 0;
