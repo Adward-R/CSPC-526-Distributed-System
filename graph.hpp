@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "checkpoint.hpp"
 
 #include "checkpoint.hpp"
 

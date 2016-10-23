@@ -3,8 +3,8 @@
 
 int CheckPoint::init(const char* devfile, bool read_mode) {
 	// init member variables by Agent
-	this.devfile = devfile;
-	this.fd = open(devfile, O_RDWR | O_NONBLOCK);
+	this->devfile = devfile;
+	this->fd = open(devfile, O_RDWR | O_NONBLOCK);
 	if (fd < 0) {
 		return 0; // handle error
 	}
@@ -15,10 +15,10 @@ int CheckPoint::init(const char* devfile, bool read_mode) {
 		cout << "Error setting checkpoint writing offset: memory boundary passed.\n";
 		return 0;
 	}
-	memset(this.buf, 0, sizeof this.buf);
-	this.buf_tail = 0;
+	memset(this->buf, 0, sizeof this->buf);
+	this->buf_tail = 0;
 	if (read_mode) {
-		this.buf_tail = BLK_SIZE - 1;
+		this->buf_tail = BLK_SIZE - 1;
 	}
 }
 
