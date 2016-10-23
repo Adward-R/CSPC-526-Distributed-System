@@ -21,5 +21,7 @@ class Graph{
 		int get_edge(uint64_t a, uint64_t b);
 		int get_neighbors(uint64_t node_id, std::vector<uint64_t> &res);
 		int shortest_path(uint64_t a, uint64_t b);
+		int checkpoint(CheckPoint& ckpoint);
+		int restore(CheckPoint& ckpoint);
 };
 #endif /* GRAPH_HPP */

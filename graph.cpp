@@ -111,3 +111,52 @@ int Graph::shortest_path(uint64_t a, uint64_t b){
 	}
 	return -1;
 }
+
+// write from in-memory graph to checkpoint area on disk
+// return 1 on success, 0 on failure for present
+int Graph::checkpoint(CheckPoint& ckpoint) {
+	map<uint64_t,set<uint64_t> >::iterator it;
+	set<uint64_t>::iterator its;
+
+	// // Get the volume in words (8 byte) of current graph after serializing
+	// int volume = 2;  // already included <volume> itself & <num of nodes>
+	// for (it = nodes.begin(); it != nodes.end(); it++) {
+	// 	volume += (it->second).size();
+	// }
+
+	// Serialize the in-memory graph map into a byte string
+	int error_flag = 0;
+	//error_flag += ! ckpoint.write((uint64_t) volume);
+	error_flag += ! ckpoint.write((uint64_t) nodes.size());
+	for (it = nodes.begin(); it != nodes.end(); it++) {
+		error_flag += ! ckpoint.write(it->first);
+		error_flag += ! ckpoint.write((uint64_t) (it->second).size());
+		for (its = (it->second).begin(); its != (it->second).end(); its++) {
+			error_flag += ! ckpoint.write(*its);
+		}
+	}
+
+	// Dump the probable remaining buffered data & check if error occurs
+	error_flag += ! ckpoint.checkin();
+	return ! error_flag
+}
+
+// return 1 for success, 0 for failure
+int Graph::restore(CheckPoint& ckpoint) {
+	uint64_t n_nodes, key, n_nbrs, nbr;
+	int error_flag = 0;
+	error_flag += ! ckpoint.read(&n_nodes, 1);
+
+	int i_node = 0;
+	while (i_node < n_nodes) {
+		error_flag += ! ckpoint.read(&key, 1);
+		error_flag += ! ckpoint.read(&n_nbrs, 1);
+		nodes[key];
+		for (int i = 0; i < n_nbrs; i++) {
+			error_flag += ! ckpoint.read(&nbr, 1);
+			nodes[key].insert(nbr);
+		}
+		i_node++;
+	}
+	return ! error_flag;
+}
