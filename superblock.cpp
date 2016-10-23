@@ -3,7 +3,7 @@
 #include <cstdio>
 
 // check if the superblock is valid or not
-bool Superblock::is_valid(){
+int Superblock::is_valid(){
 	return calc_chksum() == chksum;
 }
 
@@ -15,4 +15,9 @@ uint64_t Superblock::calc_chksum(){
 		xorsum ^= buf[i];
 	}
 	return xorsum;
+}
+
+// update the checksum of the superblock
+void Superblock::update_chksum(){
+	chksum = calc_chksum();
 }

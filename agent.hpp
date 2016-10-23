@@ -13,7 +13,6 @@ class Agent{
 		std::string devfile;
 	public:
 		Agent();
-		~Agent();
 
 		// open the log device
 		int open_devfile(char* _devfile);
@@ -21,7 +20,7 @@ class Agent{
 		// format
 		void format();
 
-		// read the checkpoint, and replay the logs
+		// read the checkpoint, and replay the logs. return 0 on invalid superblock, 1 on valid
 		int start();
 
 		// return -3 for no log space, and otherwise the return values from the graph

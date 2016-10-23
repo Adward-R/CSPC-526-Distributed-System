@@ -39,7 +39,7 @@ int check_uri_valid(mg_str *s){
 	return 1;
 }
 
-#define DEBUG 0
+#define DEBUG 1
 // Define an event handler function
 static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 	mbuf *io = &nc->recv_mbuf;
@@ -332,11 +332,16 @@ int main(int argc, char** argv) {
 	strcpy(devfile, argv[2 + fmt]);
 
 	// add the devfile to the agent
-	agent.add_devfile(devfile);
+	agent.open_devfile(devfile);
 	
 	// format
 	if (fmt)
 		agent.format();
+	else 
+		if (!agent.start()){
+			printf("invalid disklog\n");
+			return 0;
+		}
 
 	mg_mgr mgr;
 	mg_connection *conn;
