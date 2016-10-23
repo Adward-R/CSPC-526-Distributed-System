@@ -268,39 +268,23 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 				printf("400\n");
 #endif
 			}
+		}else if (strncmp(func, "checkpoint", func_len) == 0){
+			int ret = agent.checkpoint();
+#if DEBUG
+			printf("checkpoint\n");
+#endif
+			if (ret == 1){
+				mg_send_head(nc, 200, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("200\n");
+#endif
+			}else if (ret == -3){
+				mg_send_head(nc, 507, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("507\n");
+#endif
+			}
 		}
-		/*
-		json_token *t = find_json_token(tok, "node_id");
-		printf("%.*s\n",t->len, t->ptr);
-		switch (t->type){
-			case JSON_TYPE_EOF:
-				printf("EOF\n");
-				break;
-			case JSON_TYPE_STRING:
-				printf("string\n");
-				break;
-			case JSON_TYPE_NUMBER:
-				printf("number\n");
-				break;
-			case JSON_TYPE_OBJECT:
-				printf("object\n");
-				break;
-			case JSON_TYPE_TRUE:
-				printf("true\n");
-				break;
-			case JSON_TYPE_FALSE:
-				printf("false\n");
-				break;
-			case JSON_TYPE_NULL:
-				printf("NULL\n");
-				break;
-			case JSON_TYPE_ARRAY:
-				printf("array\n");
-				break;
-			default:
-				break;
-		}
-		*/
 	}
 }
 

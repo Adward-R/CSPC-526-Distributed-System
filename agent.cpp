@@ -121,5 +121,8 @@ int Agent::shortest_path(uint64_t a, uint64_t b){
 int Agent::checkpoint(){
 	CheckPoint ckp;
 	ckp.init(devfile.c_str(), false);
-	g.checkpoint(ckp);
+	if (g.checkpoint(ckp))
+		return 1;
+	else 
+		return -3;
 }
