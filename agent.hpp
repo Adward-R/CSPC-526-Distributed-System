@@ -1,18 +1,22 @@
-#ifndef GRAPH_HPP
-#define GRAPH_HPP
+#ifndef AGENT_HPP
+#define AGENT_HPP
 
-#include <vector>
-#include <map>
-#include <set>
-#include <stdint.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <string>
 
-class Graph{
+#include "graph.hpp"
+#include "disklog.hpp"
+
+class Agent{
+	private:
+		Graph g;
+		Disklog disklog;
+		std::string devfile;
 	public:
-		std::map<uint64_t,std::set<uint64_t> > nodes;
-		Graph();
-		// return 1 on success, 0 if the node exists
+		Agent();
+		int add_devfile(char* _devfile);
+		// format. return -1 for failure, 0 for not format, 1 for format
+		int format();
+
 		int add_node(uint64_t node_id);
 		int add_edge(uint64_t a, uint64_t b);
 		int remove_node(uint64_t node_id);
@@ -22,4 +26,5 @@ class Graph{
 		int get_neighbors(uint64_t node_id, std::vector<uint64_t> &res);
 		int shortest_path(uint64_t a, uint64_t b);
 };
-#endif /* GRAPH_HPP */
+
+#endif /* AGENT_HPP */

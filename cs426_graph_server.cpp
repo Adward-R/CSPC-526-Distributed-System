@@ -4,15 +4,21 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdint.h>
+#include <unistd.h>
+
+#include "const.hpp"
+#include "agent.hpp"
 #include "graph.hpp"
+#include "format.hpp"
 #include "mongoose.h"
+#include "superblock.hpp"
 
 using namespace std;
 
 #define ENDPOINT "/api/v1/"
 #define ENDPOINT_LEN (sizeof(ENDPOINT)-1)
 
-Graph g;
+Agent agent;
 
 uint64_t tok2int(json_token *tok){
 	uint64_t res = 0;
@@ -58,7 +64,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("add_node %llu\n", node_id);
 #endif
 
-			ret = g.add_node(node_id);
+			ret = agent.add_node(node_id);
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_id\":%llu}", node_id);
@@ -83,7 +89,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("add_edge %llu %llu\n", a, b);
 #endif
 
-			ret = g.add_edge(a,b);
+			ret = agent.add_edge(a,b);
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_a_id\":%llu,\"node_b_id\":%llu}", a, b);
@@ -111,7 +117,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("remove_node %llu\n", node_id);
 #endif
 
-			ret = g.remove_node(node_id);
+			ret = agent.remove_node(node_id);
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_id\":%llu}", node_id);
@@ -136,7 +142,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("remove_edge %llu %llu\n", a, b);
 #endif
 
-			ret = g.remove_edge(a,b);
+			ret = agent.remove_edge(a,b);
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_a_id\":%llu,\"node_b_id\":%llu}", a, b);
@@ -159,7 +165,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("get_node %d\n", node_id);
 #endif
 
-			ret = g.get_node(node_id);
+			ret = agent.get_node(node_id);
 			if (ret == 1){
 				mg_send_head(nc, 200, 17, "Content-Type: text/json");
 				mg_printf(nc, "{\"in_graph\":true}");
@@ -183,7 +189,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("get_edge %llu %llu\n", a, b);
 #endif
 
-			ret = g.get_edge(a, b);
+			ret = agent.get_edge(a, b);
 			if (ret == 1){
 				mg_send_head(nc, 200, 17, "Content-Type: text/json");
 				mg_printf(nc, "{\"in_graph\":true}");
@@ -211,7 +217,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #endif
 
 			vector<uint64_t> neighbors;
-			ret = g.get_neighbors(node_id, neighbors);
+			ret = agent.get_neighbors(node_id, neighbors);
 			if (ret == 1){
 				stringstream s;
 				s<<"{\"node_id\":"<<node_id<<",\"neighbors\":[";
@@ -241,7 +247,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("shortest_path %llu %llu\n", a, b);
 #endif
 
-			ret = g.shortest_path(a, b);
+			ret = agent.shortest_path(a, b);
 			if (ret >= 0){
 				char buf[100];
 				int len = sprintf(buf, "{\"distance\":%d}", ret);
@@ -298,10 +304,39 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 }
 
 int main(int argc, char** argv) {
+	int fmt = 0;
 	char port[10] = "8000";
-	if (argc >= 2){
-		strcpy(port, argv[1]);
+	char devfile[100] = "/dev/sdb";
+
+	// check options
+	for (char opt; (opt = getopt(argc, argv, "f")) != -1;){
+		switch (opt){
+			case 'f':
+				fmt = 1;
+				break;
+			default: /* '?' */
+				printf("Usage: %s [-f] <port> <devfile>\n", argv[0]);
+				return 0;
+		}
 	}
+	
+	// if the number of parameters is incorrect, return
+	if (argc != 3 + fmt){
+		printf("Usage: %s [-f] <port> <devfile>\n", argv[0]);
+		return 0;
+	}
+	
+	// if fmt, all the other parameters should shift right 1 
+	strcpy(port, argv[1 + fmt]);
+	strcpy(devfile, argv[2 + fmt]);
+
+	// add the devfile to the agent
+	agent.add_devfile(devfile);
+	
+	// format
+	if (fmt)
+		agent.format();
+
 	mg_mgr mgr;
 	mg_connection *conn;
 

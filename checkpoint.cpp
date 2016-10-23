@@ -1,3 +1,4 @@
+#include "const.hpp"
 
 // return 1 for success, 0 for failure
 // cache_length is in the form of uint64_t;
