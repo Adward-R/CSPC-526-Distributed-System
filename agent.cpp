@@ -30,6 +30,9 @@ int Agent::start(){
 	disklog.keep_variable_in_memory();
 
 	//TODO, read checkpoint
+	CheckPoint ckp;
+	ckp.init(devfile.c_str(), true);
+	g.restore(ckp);
 
 	// replay the logs
 	for (Disklog::iterator it = disklog.begin(); !it.end(); it.next()){
