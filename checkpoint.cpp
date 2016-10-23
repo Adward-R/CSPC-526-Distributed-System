@@ -1,6 +1,7 @@
+#include "checkpoint.hpp"
 #include "const.hpp"
 
-CheckPoint::init(char* devfile, bool read_mode=False) {
+int CheckPoint::init(const char* devfile, bool read_mode) {
 	// init member variables by Agent
 	this.devfile = devfile;
 	this.fd = open(devfile, O_RDWR | O_NONBLOCK);
@@ -21,7 +22,7 @@ CheckPoint::init(char* devfile, bool read_mode=False) {
 	}
 }
 
-CheckPoint::write(uint64_t val) {
+int CheckPoint::write(uint64_t val) {
 	memcpy(buf + buf_tail, val, 8);
 	buf_tail += 8;
 	if (buf_tail == BLK_SIZE) {
@@ -39,7 +40,7 @@ CheckPoint::write(uint64_t val) {
 	}
 }
 
-CheckPoint::read(uint64_t *ret, int len) {
+int CheckPoint::read(uint64_t *ret, int len) {
 	len *= 8;
 	int ret_offset = 0;
 	int left_bytes = BLK_SIZE - buf_tail;

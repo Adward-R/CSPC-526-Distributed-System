@@ -8,6 +8,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "checkpoint.hpp"
+
 class Graph{
 	public:
 		std::map<uint64_t,std::set<uint64_t> > nodes;

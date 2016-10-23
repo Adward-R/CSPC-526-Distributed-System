@@ -1,6 +1,7 @@
 #include <cstring>
 #include <cstdio>
 #include "agent.hpp"
+#include "checkpoint.hpp"
 
 Agent::Agent(){
 }
@@ -115,5 +116,7 @@ int Agent::shortest_path(uint64_t a, uint64_t b){
 
 // return 1 on success, -3 on no space
 int Agent::checkpoint(){
-	//TODO, call the graph's checkpoint
+	CheckPoint ckp;
+	ckp.init(devfile.c_str(), false);
+	g.checkpoint(ckp);
 }

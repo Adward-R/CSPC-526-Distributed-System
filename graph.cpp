@@ -138,7 +138,7 @@ int Graph::checkpoint(CheckPoint& ckpoint) {
 
 	// Dump the probable remaining buffered data & check if error occurs
 	error_flag += ! ckpoint.checkin();
-	return ! error_flag
+	return ! error_flag;
 }
 
 // return 1 for success, 0 for failure
