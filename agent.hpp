@@ -13,18 +13,31 @@ class Agent{
 		std::string devfile;
 	public:
 		Agent();
-		int add_devfile(char* _devfile);
-		// format. return -1 for failure, 0 for not format, 1 for format
-		int format();
+		~Agent();
 
+		// open the log device
+		int open_devfile(char* _devfile);
+
+		// format
+		void format();
+
+		// read the checkpoint, and replay the logs
+		int start();
+
+		// return -3 for no log space, and otherwise the return values from the graph
 		int add_node(uint64_t node_id);
 		int add_edge(uint64_t a, uint64_t b);
 		int remove_node(uint64_t node_id);
 		int remove_edge(uint64_t a, uint64_t b);
+
+		// return the return values from the graph
 		int get_node(uint64_t node_id);
 		int get_edge(uint64_t a, uint64_t b);
 		int get_neighbors(uint64_t node_id, std::vector<uint64_t> &res);
 		int shortest_path(uint64_t a, uint64_t b);
+
+		// return 1 on success, -3 on no space
+		int checkpoint();
 };
 
 #endif /* AGENT_HPP */

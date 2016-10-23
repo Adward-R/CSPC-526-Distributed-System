@@ -12,6 +12,7 @@
 #include "format.hpp"
 #include "mongoose.h"
 #include "superblock.hpp"
+#include "logblock.hpp"
 
 using namespace std;
 
