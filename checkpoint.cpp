@@ -1,10 +1,15 @@
+#include <unistd.h>
+#include <fcntl.h>
+#include <iostream>
+#include <cstring>
+
 #include "checkpoint.hpp"
 #include "const.hpp"
 
 int CheckPoint::init(const char* devfile, bool read_mode) {
 	// init member variables by Agent
-	this->devfile = devfile;
-	this->fd = open(devfile, O_RDWR | O_NONBLOCK);
+	strcpy(this->devfile, devfile);
+	this->fd = ::open(devfile, O_RDWR | O_NONBLOCK);
 	if (fd < 0) {
 		return 0; // handle error
 	}
@@ -23,11 +28,11 @@ int CheckPoint::init(const char* devfile, bool read_mode) {
 }
 
 int CheckPoint::write(uint64_t val) {
-	memcpy(buf + buf_tail, val, 8);
+	memcpy(buf + buf_tail, &val, 8);
 	buf_tail += 8;
 	if (buf_tail == BLK_SIZE) {
 		// Write buffered blk to designated place of file descriptor
-		ssize_t cond = write(fd, buf, BLK_SIZE);
+		ssize_t cond = ::write(fd, buf, BLK_SIZE);
 		if (cond < 0) {
 	    return 0; // handle real error
 		}
@@ -50,7 +55,7 @@ int CheckPoint::read(uint64_t *ret, int len) {
 		ret_offset += left_bytes / 8;
 		len -= left_bytes;
 		buf_tail = 0;
-		ssize_t cond = read(fd, buf, BLK_SIZE);
+		ssize_t cond = ::read(fd, buf, BLK_SIZE);
 		if (cond < 0) {
 			return 0; // handle read error
 		}
@@ -61,9 +66,9 @@ int CheckPoint::read(uint64_t *ret, int len) {
 	return 1;
 }
 
-CheckPoint::checkin() {
+int CheckPoint::checkin() {
 	// Write buffered blk to designated place of file descriptor
-	ssize_t cond = write(fd, buf, buf_tail);  // buf_tail replaces BLK_SIZE
+	ssize_t cond = ::write(fd, buf, buf_tail);  // buf_tail replaces BLK_SIZE
 	if (cond < 0) {
 		return 0; // handle real error
 	} else {
