@@ -17,7 +17,7 @@ int CheckPoint::init(const char* devfile, bool read_mode) {
 	// lseek() requires "sys/types.h" & "unistd.h"
 	off_t cond = lseek(fd, N_LOG_BLK * BLK_SIZE, SEEK_SET);
 	if (cond == -1) {
-		cout << "Error setting checkpoint writing offset: memory boundary passed.\n";
+		std::cout << "Error setting checkpoint writing offset: memory boundary passed.\n";
 		return 0;
 	}
 	memset(this->buf, 0, sizeof this->buf);
