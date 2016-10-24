@@ -11,7 +11,7 @@ class CheckPoint{
 	private:
 		//int access_ckpoint(uint64_t cache[], int cache_length, int offset, int opt);
 		//int restore();
-		char* devfile; // block device path, e.g. "/dev/sdb/"
+		char devfile[100]; // block device path, e.g. "/dev/sdb/"
 		int fd; // file descriptor
 		char buf[BLK_SIZE]; // the buffer to hold write; write to disk every BLK_SIZE
 		int buf_tail; // point to the tail of the buffer in form of BYTES

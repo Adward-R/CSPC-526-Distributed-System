@@ -4,3 +4,6 @@ cs426_graph_server: cs426_graph_server.cpp agent.cpp graph.cpp disklog.cpp super
 
 test: test.cpp logblock.cpp 
 	g++ test.cpp logblock.cpp -o test
+
+read_disk: read_disk.cpp
+	g++ read_disk.cpp -o read_disk

@@ -32,7 +32,9 @@ int Agent::start(){
 	//TODO, read checkpoint
 	CheckPoint ckp;
 	ckp.init(devfile.c_str(), true);
+	printf("before restore\n");
 	g.restore(ckp);
+	printf("after restore\n");
 
 	// replay the logs
 	for (Disklog::iterator it = disklog.begin(); !it.end(); it.next()){
@@ -120,7 +122,9 @@ int Agent::shortest_path(uint64_t a, uint64_t b){
 // return 1 on success, -3 on no space
 int Agent::checkpoint(){
 	CheckPoint ckp;
+	printf("before ckp.init()\n");
 	ckp.init(devfile.c_str(), false);
+	printf("before g.checkpoint()\n");
 	if (g.checkpoint(ckp))
 		return 1;
 	else 

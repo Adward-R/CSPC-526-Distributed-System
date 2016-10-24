@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <iostream>
+#include <cstdio>
 
 #include "graph.hpp"
 #include "const.hpp"
@@ -145,12 +146,17 @@ int Graph::checkpoint(CheckPoint& ckpoint) {
 int Graph::restore(CheckPoint& ckpoint) {
 	uint64_t n_nodes, key, n_nbrs, nbr;
 	int error_flag = 0;
+	printf("begin restore\n");
 	error_flag += ! ckpoint.read(&n_nodes, 1);
+	printf("after ckpoint.read() n_nodes = %llu\n", n_nodes);
 
 	int i_node = 0;
 	while (i_node < n_nodes) {
+		printf("i_node = %d\n", i_node);
 		error_flag += ! ckpoint.read(&key, 1);
+		printf("i_node = %d: after read key = %llu\n", i_node, key);
 		error_flag += ! ckpoint.read(&n_nbrs, 1);
+		printf("i_node = %d: after read n_nbr = %llu\n", i_node, n_nbrs);
 		nodes[key];
 		for (int i = 0; i < n_nbrs; i++) {
 			error_flag += ! ckpoint.read(&nbr, 1);
