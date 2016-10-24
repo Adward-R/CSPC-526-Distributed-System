@@ -12,8 +12,18 @@ class TestLarge:
 
 	def kill(self):
 		ret = commands.getoutput("""sudo killall cs426_graph_server""")
+	# try until the connection established
+	def try_connect(self):
+		ret = commands.getoutput("""curl -D - -H "Content-Type: application/json" -X POST -d '' http://127.0.0.1:8000/api/v1/check""")
+		ret = ret.replace('\n', ' ')
+		match = re.search("Connection refused", ret)
+		while match != None:
+			ret = commands.getoutput("""curl -D - -H "Content-Type: application/json" -X POST -d '' http://127.0.0.1:8000/api/v1/check""")
+			ret = ret.replace('\n', ' ')
+			match = re.search("Connection refused", ret)
 	def resume(self):
-		subprocess.Popen(['sudo', './cs426_graph_server', '8000', '/dev/sdb'], stdout=subprocess.PIPE)
+		hdl = subprocess.Popen(['sudo', './cs426_graph_server', '8000', '/dev/sdb'], stdout=subprocess.PIPE)
+		self.try_connect()
 	def checkpoint(self):
 		ret = commands.getoutput("""curl -D - -H "Content-Type: application/json" -X POST -d '' http://127.0.0.1:8000/api/v1/checkpoint""")
 		ret = ret.replace('\n', ' ')
@@ -45,6 +55,7 @@ class TestLarge:
 		if (expected != retcode):
 			print "add_node %d error: expect %d, get %d"%(node, expected, retcode)
 			return False
+#print "add_node %d: %d"%(node, retcode)
 		return True
 
 	def add_edge(self, a, b):
@@ -72,6 +83,7 @@ class TestLarge:
 		if (expected != retcode):
 			print "add_edge %d %d error: expect %d, get %d"%(a, b, expected, retcode)
 			return False
+#print "add_edge %d %d: %d"%(a,b, retcode)
 		return True
 	def remove_node(self,node):
 		ret = commands.getoutput("""curl -D - -H "Content-Type: application/json" -X POST -d '{"node_id":%d}' http://127.0.0.1:8000/api/v1/remove_node"""%node)
@@ -97,6 +109,7 @@ class TestLarge:
 		if (expected != retcode):
 			print "remove_node %d error: expect %d, get %d"%(node, expected, retcode)
 			return False
+#print "remove_node %d: %d"%(node, retcode)
 		return True
 	def remove_edge(self, a, b):
 		ret = commands.getoutput("""curl -D - -H "Content-Type: application/json" -X POST -d '{"node_a_id":%d,"node_b_id":%d}' http://127.0.0.1:8000/api/v1/remove_edge"""%(a,b))
@@ -123,6 +136,7 @@ class TestLarge:
 		if (expected != retcode):
 			print "remove_edge %d %d error: expect %d, get %d"%(a, b, expected, retcode)
 			return False
+#print "remove_edge %d %d: %d"%(a,b, retcode)
 		return True
 
 def rand_node():
@@ -150,17 +164,20 @@ for i in range(1000):
 	test.add_edge(rand_node(),rand_node())
 
 for i in range(20000):
-	rd = random.randint(0,99)
-	if rd < 10:
+	rd = random.randint(0,999)
+	if rd < 100:
 		test.add_node(rand_node())
-	elif rd < 20:
+	elif rd < 200:
 		test.remove_node(rand_node())
-	elif rd < 70:
+	elif rd < 700:
 		test.add_edge(rand_node(), rand_node())
-	elif rd < 95:
+	elif rd < 950:
 		test.remove_edge(rand_node(), rand_node())
-	else:
+	elif rd < 999:
 		test.kill()
 		test.resume()
-		time.sleep(0.2)
+	else:
+		test.checkpoint()
+		print "checkpoint"
+		pass
 test.kill()
