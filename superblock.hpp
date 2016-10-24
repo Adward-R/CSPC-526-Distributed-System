@@ -6,7 +6,8 @@ struct Superblock{
 	uint32_t gen; // generation number
 	uint32_t log_start; // the first block of the log, not including the super block
 	uint32_t log_size; // number of blocks in the log, not including the superblock
-	uint8_t empty[4076]; // padding
+	uint32_t has_checkpoint; // if there is a checkpoint of not
+	uint8_t empty[4072]; // padding
 
 	// check if the superblock is valid (return 1) or not (0)
 	int is_valid();

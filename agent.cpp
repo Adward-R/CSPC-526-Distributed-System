@@ -13,10 +13,11 @@ int Agent::open_devfile(char* _devfile){
 
 void Agent::format(){
 	if (disklog.valid()){
-		disklog.inc_gen();
+		disklog.inc_gen(1);
 	}else {
 		disklog.reset();
 	}
+	//print_log();
 }
 
 // read the checkpoint, and replay the logs. return 0 on invalid superblock, 1 on valid
@@ -29,12 +30,14 @@ int Agent::start(){
 	// read in-memory variables
 	disklog.keep_variable_in_memory();
 
-	//TODO, read checkpoint
-	CheckPoint ckp;
-	ckp.init(devfile.c_str(), true);
-	printf("before restore\n");
-	g.restore(ckp);
-	printf("after restore\n");
+	//print_log();
+
+	// read checkpoint
+	if (disklog.get_checkpoint()){
+		CheckPoint ckp;
+		ckp.init(devfile.c_str(), true);
+		g.restore(ckp);
+	}
 
 	// replay the logs
 	for (Disklog::iterator it = disklog.begin(); !it.end(); it.next()){
@@ -121,12 +124,41 @@ int Agent::shortest_path(uint64_t a, uint64_t b){
 
 // return 1 on success, -3 on no space
 int Agent::checkpoint(){
+	int ret;
 	CheckPoint ckp;
-	printf("before ckp.init()\n");
 	ckp.init(devfile.c_str(), false);
-	printf("before g.checkpoint()\n");
-	if (g.checkpoint(ckp))
+	ret = g.checkpoint(ckp);
+	disklog.inc_gen(0);
+	
+	if (ret){
+		disklog.set_checkpoint(1);
 		return 1;
-	else 
+	} else 
 		return -3;
+}
+
+// for debug, print current logs
+void Agent::print_log(){
+	printf("current gen = %d logs:\n", disklog.get_gen());
+	for (Disklog::iterator it = disklog.begin(); !it.end(); it.next()){
+		Logentry* entry = it.entry();
+		switch (entry->opcode){
+			case 0:
+				printf("add_node %d\n", entry->a);
+				break;
+			case 1:
+				printf("add_edge %d %d\n", entry->a, entry->b);
+				break;
+			case 2:
+				printf("remove_node %d\n", entry->a);
+				break;
+			case 3:
+				printf("remove_edge %d %d\n", entry->a, entry->b);
+				break;
+			default:
+				printf("Agent::print_log(): undefined opcode\n");
+				break;
+		}
+	}
+	printf("=== end of logs ===\n");
 }

@@ -39,7 +39,7 @@ int check_uri_valid(mg_str *s){
 	return 1;
 }
 
-#define DEBUG 1
+#define DEBUG 0
 // Define an event handler function
 static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 	mbuf *io = &nc->recv_mbuf;
@@ -79,6 +79,11 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #if DEBUG
 				printf("204\n");
 #endif
+			}else if (ret == -3){
+				mg_send_head(nc, 507, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("507\n");
+#endif
 			}
 		}else if (strncmp(func, "add_edge", func_len)==0){
 			int ret = parse_json(hm->body.p, hm->body.len,tok,n_tok);
@@ -109,6 +114,11 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #if DEBUG
 				printf("400\n");
 #endif
+			}else if (ret == -3){
+				mg_send_head(nc, 507, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("507\n");
+#endif
 			}
 		}else if (strncmp(func, "remove_node", func_len)==0){
 			int ret = parse_json(hm->body.p, hm->body.len,tok,n_tok);
@@ -132,7 +142,13 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #if DEBUG
 				printf("400\n");
 #endif
+			}else if (ret == -3){
+				mg_send_head(nc, 507, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("507\n");
+#endif
 			}
+
 		}else if (strncmp(func, "remove_edge", func_len)==0){
 			int ret = parse_json(hm->body.p, hm->body.len,tok,n_tok);
 			t = find_json_token(tok, "node_a_id");
@@ -157,7 +173,13 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #if DEBUG
 				printf("400\n");
 #endif
+			}else if (ret == -3){
+				mg_send_head(nc, 507, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("507\n");
+#endif
 			}
+
 		}else if (strncmp(func, "get_node", func_len)==0){
 			int ret = parse_json(hm->body.p, hm->body.len,tok,n_tok);
 			t = find_json_token(tok, "node_id");

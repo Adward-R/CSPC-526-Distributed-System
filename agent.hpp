@@ -37,6 +37,9 @@ class Agent{
 
 		// return 1 on success, -3 on no space
 		int checkpoint();
+
+		// for debug, print current logs
+		void print_log();
 };
 
 #endif /* AGENT_HPP */

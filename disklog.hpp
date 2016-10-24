@@ -32,14 +32,22 @@ class Disklog{
 		// return 1 if valid, 0 otherwise
 		int valid();
 
-		// increment the generation number
-		void inc_gen();
+		// increment the generation number.
+		void inc_gen(int clear_checkpoint);
 
 		// reset the log
 		void reset();
 
+		// set if having checkpoint
+		void set_checkpoint(int has_checkpoint);
+
+		// get if having checkpoint
+		int get_checkpoint();
+
 		// read in-memory variables from disk
 		void keep_variable_in_memory();
+
+		uint64_t  get_gen();
 
 		class iterator{
 			private:

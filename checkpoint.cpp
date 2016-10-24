@@ -9,18 +9,14 @@
 
 int CheckPoint::init(const char* devfile, bool read_mode) {
 	// init member variables by Agent
-	printf("begin init()\n");
 	strcpy(this->devfile, devfile);
-	printf("after strcpy\n");
 	this->fd = ::open(devfile, O_RDWR | O_NONBLOCK);
-	printf("after ::open\n");
 	if (fd < 0) {
 		return 0; // handle error
 	}
 	// Set write|read pointer to the end of log section
 	// lseek() requires "sys/types.h" & "unistd.h"
 	off_t cond = lseek(fd, N_LOG_BLK * BLK_SIZE, SEEK_SET);
-	printf("after lseek\n");
 	if (cond == -1) {
 		std::cout << "Error setting checkpoint writing offset: memory boundary passed.\n";
 		return 0;
@@ -30,7 +26,6 @@ int CheckPoint::init(const char* devfile, bool read_mode) {
 	if (read_mode) {
 		this->buf_tail = BLK_SIZE;
 	}
-	printf("init finish\n");
 }
 
 int CheckPoint::write(uint64_t val) {

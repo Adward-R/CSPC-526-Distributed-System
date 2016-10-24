@@ -90,10 +90,12 @@ int Disklog::valid(){
 }
 
 // increment the generation number
-void Disklog::inc_gen(){
+void Disklog::inc_gen(int clear_checkpoint){
 	int ret;
 	//increment the generation number in the superblock, and update checksum
 	sb->gen++;
+	if (clear_checkpoint)
+		sb->has_checkpoint = 0;
 	sb->update_chksum();
 	// flush to disk
 	ret = msync(sb, BLK_SIZE, MS_SYNC);
@@ -117,6 +119,7 @@ void Disklog::reset(){
 	sb->gen = 0;
 	sb->log_start = 1;
 	sb->log_size = N_LOG_BLK - 1;
+	sb->has_checkpoint = 0;
 	sb->update_chksum();
 	// flush to disk
 	ret = msync(sb, BLK_SIZE, MS_SYNC);
@@ -133,12 +136,32 @@ void Disklog::reset(){
 	lb[0].update_chksum();
 }
 
+// set if having checkpoint
+void Disklog::set_checkpoint(int has_checkpoint){
+	sb->has_checkpoint = has_checkpoint;
+	sb->update_chksum();
+	// flush to disk
+	int ret = msync(sb, BLK_SIZE, MS_SYNC);
+	if (ret == -1){
+		perror("msync() in Disklog::set_checkpoint()");
+	}
+}
+
+// get if having checkpoint
+int Disklog::get_checkpoint(){
+	return sb->has_checkpoint;
+}
+
 // read in-memory variables from disk
 void Disklog::keep_variable_in_memory(){
 	// update in memory variables
 	gen = sb->gen;
 	tail = 0;
 	log_size = N_LOG_BLK - 1;
+}
+
+uint64_t Disklog::get_gen(){
+	return gen;
 }
 
 // ===== below are Disklog::iterator functions =====
