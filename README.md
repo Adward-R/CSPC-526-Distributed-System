@@ -11,8 +11,8 @@ Both contributed to:
 
 ## Yuliang Li
 
-- Mainly took charge of updating disklog and maintaining in-memory log;
-- Added design for models such as Agent, Disklog, Logblock.
+- Mainly took charge of maintaining disklog, server startup and failure recovery.
+- Added design for models such as Agent, Disklog, Superblock, Logblock.
 
 ## Keyang Dong
 
