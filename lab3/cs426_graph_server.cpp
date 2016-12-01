@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "graph.hpp"
 #include "mongoose.h"
+#include "backup_client.hpp"
 
 using namespace std;
 
@@ -13,7 +14,6 @@ using namespace std;
 #define ENDPOINT_LEN (sizeof(ENDPOINT)-1)
 
 Graph g;
-char backupIp[20] = "";
 
 uint64_t tok2int(json_token *tok){
 	uint64_t res = 0;
@@ -299,6 +299,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 }
 
 int main(int argc, char** argv) {
+	char backupIp[20] = "";
 	char port[10] = "8000";
 
 	for (char opt; (opt = getopt(argc, argv, "b:")) != -1;){
