@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdint.h>
+#include <pthread.h>
 
 #include <thrift/concurrency/ThreadManager.h>
 #include <thrift/concurrency/PlatformThreadFactory.h>
@@ -313,6 +314,27 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 	}
 }
 
+void* run_webserver(void* arg){
+	char* port = (char*) arg;
+
+	mg_mgr mgr;
+	mg_connection *conn;
+
+	mg_mgr_init(&mgr, NULL);	// Initialize event manager object
+
+	// Note that many connections can be added to a single event manager
+	// Connections can be created at any point, e.g. in event handler function
+	conn = mg_bind(&mgr, port, ev_handler);	// Create listening connection and add it to the event manager
+	mg_set_protocol_http_websocket(conn);
+
+	for (;;) {	// Start infinite event loop
+		mg_mgr_poll(&mgr, 1000);
+	}
+
+	mg_mgr_free(&mgr);
+	return 0;
+}
+
 int main(int argc, char** argv) {
 	char backupIp[20] = "";
 	char port[10] = "8000";
@@ -345,6 +367,15 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	// Start web server
+	pthread_t webserver_thread;
+
+	if(pthread_create(&webserver_thread, NULL, run_webserver, port)) {
+		fprintf(stderr, "Error creating webserver thread\n");
+		return 0;
+	}
+
+#if 1
 	// start thrift backup server
 	TThreadedServer server(
 			boost::make_shared<BackupServiceProcessor>(boost::make_shared<BackupServer>(&storageServer)), // pass  the storageServer to it, so it can update the storageServer
@@ -353,22 +384,7 @@ int main(int argc, char** argv) {
 			boost::make_shared<TBinaryProtocolFactory>());
 
 	server.serve();
+#endif
 
-	// Start web server
-	mg_mgr mgr;
-	mg_connection *conn;
-
-	mg_mgr_init(&mgr, NULL);	// Initialize event manager object
-
-	// Note that many connections can be added to a single event manager
-	// Connections can be created at any point, e.g. in event handler function
-	conn = mg_bind(&mgr, port, ev_handler);	// Create listening connection and add it to the event manager
-	mg_set_protocol_http_websocket(conn);
-
-	for (;;) {	// Start infinite event loop
-		mg_mgr_poll(&mgr, 1000);
-	}
-
-	mg_mgr_free(&mgr);
 	return 0;
 }
