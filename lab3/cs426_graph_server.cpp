@@ -4,12 +4,36 @@
 #include <stdlib.h>
 #include <libgen.h>
 #include <stdint.h>
+
+#include <thrift/concurrency/ThreadManager.h>
+#include <thrift/concurrency/PlatformThreadFactory.h>
+#include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/server/TSimpleServer.h>
+#include <thrift/server/TThreadPoolServer.h>
+#include <thrift/server/TThreadedServer.h>
+#include <thrift/transport/TServerSocket.h>
+#include <thrift/transport/TSocket.h>
+#include <thrift/transport/TTransportUtils.h>
+#include <thrift/TToString.h>
+
+#include <boost/make_shared.hpp>
+
+#include <iostream>
+#include <stdexcept>
+#include <sstream>
+
 #include "graph.hpp"
 #include "mongoose.h"
 #include "backup_client.hpp"
+#include "backup_server.hpp"
 #include "storage_server.hpp"
 
 using namespace std;
+using namespace apache::thrift;
+using namespace apache::thrift::concurrency;
+using namespace apache::thrift::protocol;
+using namespace apache::thrift::transport;
+using namespace apache::thrift::server;
 
 #define ENDPOINT "/api/v1/"
 #define ENDPOINT_LEN (sizeof(ENDPOINT)-1)
@@ -321,6 +345,16 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	// start thrift backup server
+	TThreadedServer server(
+			boost::make_shared<BackupServiceProcessor>(boost::make_shared<BackupServer>(&storageServer)), // pass  the storageServer to it, so it can update the storageServer
+			boost::make_shared<TServerSocket>(THRIFT_PORT), //port
+			boost::make_shared<TBufferedTransportFactory>(),
+			boost::make_shared<TBinaryProtocolFactory>());
+
+	server.serve();
+
+	// Start web server
 	mg_mgr mgr;
 	mg_connection *conn;
 
