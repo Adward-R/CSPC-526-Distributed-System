@@ -7,14 +7,12 @@
 #include "graph.hpp"
 #include "mongoose.h"
 #include "backup_client.hpp"
+#include "storage_server.hpp"
 
 using namespace std;
 
 #define ENDPOINT "/api/v1/"
 #define ENDPOINT_LEN (sizeof(ENDPOINT)-1)
-
-Graph g;
-BackupClient *backupClient = 0;
 
 uint64_t tok2int(json_token *tok){
 	uint64_t res = 0;
@@ -34,8 +32,9 @@ int check_uri_valid(mg_str *s){
 	return 1;
 }
 
+StorageServer storageServer;
+
 #define DEBUG 0
-// Define an event handler function
 static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 	mbuf *io = &nc->recv_mbuf;
 	http_message *hm;
@@ -60,17 +59,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("add_node %llu\n", node_id);
 #endif
 
-			// first backup
-			if (backupClient != 0)
-				ret = backupClient->add_node(node_id);
-			else 
-				ret = 1;
-
-			if (ret == 1) // if successfully backup
-				ret = g.add_node(node_id);
-			else // otherwise
-				ret = -100;
-
+			ret = storageServer.add_node(node_id);
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_id\":%llu}", node_id);
@@ -100,16 +89,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("add_edge %llu %llu\n", a, b);
 #endif
 
-			// first backup
-			if (backupClient != 0)
-				ret = backupClient->add_edge(a,b);
-			else 
-				ret = 1;
-
-			if (ret == 1) // if successfully backup
-				ret = g.add_edge(a,b);
-			else // otherwise
-				ret = -100;
+			ret = storageServer.add_edge(a,b);
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_a_id\":%llu,\"node_b_id\":%llu}", a, b);
@@ -143,16 +123,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("remove_node %llu\n", node_id);
 #endif
 
-			// first backup
-			if (backupClient != 0)
-				ret = backupClient->remove_node(node_id);
-			else 
-				ret = 1;
-
-			if (ret == 1) // if successfully backup
-				ret = g.remove_node(node_id);
-			else // otherwise
-				ret = -100;
+			ret = storageServer.remove_node(node_id);
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_id\":%llu}", node_id);
@@ -183,16 +154,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("remove_edge %llu %llu\n", a, b);
 #endif
 
-			// first backup
-			if (backupClient != 0)
-				ret = backupClient->remove_edge(a,b);
-			else 
-				ret = 1;
-
-			if (ret == 1) // if successfully backup
-				ret = g.remove_edge(a,b);
-			else // otherwise
-				ret = -100;
+			ret = storageServer.remove_edge(a,b);
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_a_id\":%llu,\"node_b_id\":%llu}", a, b);
@@ -221,7 +183,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("get_node %d\n", node_id);
 #endif
 
-			ret = g.get_node(node_id);
+			ret = storageServer.get_node(node_id);
 			if (ret == 1){
 				mg_send_head(nc, 200, 17, "Content-Type: text/json");
 				mg_printf(nc, "{\"in_graph\":true}");
@@ -245,7 +207,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("get_edge %llu %llu\n", a, b);
 #endif
 
-			ret = g.get_edge(a, b);
+			ret = storageServer.get_edge(a, b);
 			if (ret == 1){
 				mg_send_head(nc, 200, 17, "Content-Type: text/json");
 				mg_printf(nc, "{\"in_graph\":true}");
@@ -273,7 +235,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #endif
 
 			vector<uint64_t> neighbors;
-			ret = g.get_neighbors(node_id, neighbors);
+			ret = storageServer.get_neighbors(node_id, neighbors);
 			if (ret == 1){
 				stringstream s;
 				s<<"{\"node_id\":"<<node_id<<",\"neighbors\":[";
@@ -303,7 +265,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("shortest_path %llu %llu\n", a, b);
 #endif
 
-			ret = g.shortest_path(a, b);
+			ret = storageServer.shortest_path(a, b);
 			if (ret >= 0){
 				char buf[100];
 				int len = sprintf(buf, "{\"distance\":%d}", ret);
@@ -324,38 +286,6 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #endif
 			}
 		}
-		/*
-		json_token *t = find_json_token(tok, "node_id");
-		printf("%.*s\n",t->len, t->ptr);
-		switch (t->type){
-			case JSON_TYPE_EOF:
-				printf("EOF\n");
-				break;
-			case JSON_TYPE_STRING:
-				printf("string\n");
-				break;
-			case JSON_TYPE_NUMBER:
-				printf("number\n");
-				break;
-			case JSON_TYPE_OBJECT:
-				printf("object\n");
-				break;
-			case JSON_TYPE_TRUE:
-				printf("true\n");
-				break;
-			case JSON_TYPE_FALSE:
-				printf("false\n");
-				break;
-			case JSON_TYPE_NULL:
-				printf("NULL\n");
-				break;
-			case JSON_TYPE_ARRAY:
-				printf("array\n");
-				break;
-			default:
-				break;
-		}
-		*/
 	}
 }
 
@@ -384,8 +314,11 @@ int main(int argc, char** argv) {
 	printf("listening on port %s\n", port);
 
 	if (strlen(backupIp) != 0){
-		backupClient = new BackupClient();
-		backupClient->connect(backupIp);
+		int ret = storageServer.connectBackupClient(backupIp);
+		if (ret == 0){
+			printf("[main] Fail to connect to the backup server %s\n", backupIp);
+			return 0;
+		}
 	}
 
 	mg_mgr mgr;

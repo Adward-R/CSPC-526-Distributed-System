@@ -9,19 +9,19 @@ int BackupClient::connect(char* backupIp){
 	client = boost::shared_ptr<BackupServiceClient> (new BackupServiceClient(protocol));
 
 	try{
-		printf("Connecting to backup server %s\n", backupIp);
+		printf("[BackupClient::connect] Connecting to backup server %s\n", backupIp);
 		transport->open();
 	} catch (TException& tx){
 		printf("%s\n", tx.what());
 		return 0;
 	}
-	printf("Successfully connected to backup server %s\n", backupIp);
+	printf("[BackupClient::connect] Successfully connected to backup server %s\n", backupIp);
 	return 1;
 }
 
 int BackupClient::add_node(uint64_t _node){
 	if (_node > 0x7fffffffffffffff)
-		printf("Warning: node id exceeds int64_t range\n");
+		printf("[BackupClient::add_node] Warning: node id exceeds int64_t range\n");
 	int64_t node = (int64_t) _node;
 	// TODO
 	return 1;
@@ -29,7 +29,7 @@ int BackupClient::add_node(uint64_t _node){
 
 int BackupClient::add_edge(uint64_t _a, uint64_t _b){
 	if (_a > 0x7fffffffffffffff || _b > 0x7fffffffffffffff)
-		printf("Warning: node id exceeds int64_t range\n");
+		printf("[BackupClient::add_edge] Warning: node id exceeds int64_t range\n");
 	int64_t a = (int64_t)_a, b = (int64_t)_b;
 	//TODO
 	return 1;
@@ -37,7 +37,7 @@ int BackupClient::add_edge(uint64_t _a, uint64_t _b){
 
 int BackupClient::remove_node(uint64_t _node){
 	if (_node > 0x7fffffffffffffff)
-		printf("Warning: node id exceeds int64_t range\n");
+		printf("[BackupClient::remove_node] Warning: node id exceeds int64_t range\n");
 	int64_t node = (int64_t) _node;
 	//TODO
 	return 1;
@@ -45,7 +45,7 @@ int BackupClient::remove_node(uint64_t _node){
 
 int BackupClient::remove_edge(uint64_t _a, uint64_t _b){
 	if (_a > 0x7fffffffffffffff || _b > 0x7fffffffffffffff)
-		printf("Warning: node id exceeds int64_t range\n");
+		printf("[BackupClient::remove_edge] Warning: node id exceeds int64_t range\n");
 	int64_t a = (int64_t)_a, b = (int64_t)_b;
 	//TODO
 	return 1;
