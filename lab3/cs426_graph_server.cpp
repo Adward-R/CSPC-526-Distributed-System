@@ -14,6 +14,7 @@ using namespace std;
 #define ENDPOINT_LEN (sizeof(ENDPOINT)-1)
 
 Graph g;
+BackupClient *backupClient = 0;
 
 uint64_t tok2int(json_token *tok){
 	uint64_t res = 0;
@@ -59,7 +60,17 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("add_node %llu\n", node_id);
 #endif
 
-			ret = g.add_node(node_id);
+			// first backup
+			if (backupClient != 0)
+				ret = backupClient->add_node(node_id);
+			else 
+				ret = 1;
+
+			if (ret == 1) // if successfully backup
+				ret = g.add_node(node_id);
+			else // otherwise
+				ret = -100;
+
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_id\":%llu}", node_id);
@@ -72,6 +83,11 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 				mg_send_head(nc, 204, 0, "Content-Type: text/json");
 #if DEBUG
 				printf("204\n");
+#endif
+			}else if (ret == -100){
+				mg_send_head(nc, 500, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("500\n");
 #endif
 			}
 		}else if (strncmp(func, "add_edge", func_len)==0){
@@ -84,7 +100,16 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("add_edge %llu %llu\n", a, b);
 #endif
 
-			ret = g.add_edge(a,b);
+			// first backup
+			if (backupClient != 0)
+				ret = backupClient->add_edge(a,b);
+			else 
+				ret = 1;
+
+			if (ret == 1) // if successfully backup
+				ret = g.add_edge(a,b);
+			else // otherwise
+				ret = -100;
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_a_id\":%llu,\"node_b_id\":%llu}", a, b);
@@ -103,7 +128,13 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #if DEBUG
 				printf("400\n");
 #endif
+			}else if (ret == -100){
+				mg_send_head(nc, 500, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("500\n");
+#endif
 			}
+
 		}else if (strncmp(func, "remove_node", func_len)==0){
 			int ret = parse_json(hm->body.p, hm->body.len,tok,n_tok);
 			t = find_json_token(tok, "node_id");
@@ -112,7 +143,16 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("remove_node %llu\n", node_id);
 #endif
 
-			ret = g.remove_node(node_id);
+			// first backup
+			if (backupClient != 0)
+				ret = backupClient->remove_node(node_id);
+			else 
+				ret = 1;
+
+			if (ret == 1) // if successfully backup
+				ret = g.remove_node(node_id);
+			else // otherwise
+				ret = -100;
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_id\":%llu}", node_id);
@@ -126,7 +166,13 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #if DEBUG
 				printf("400\n");
 #endif
+			}else if (ret == -100){
+				mg_send_head(nc, 500, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("500\n");
+#endif
 			}
+
 		}else if (strncmp(func, "remove_edge", func_len)==0){
 			int ret = parse_json(hm->body.p, hm->body.len,tok,n_tok);
 			t = find_json_token(tok, "node_a_id");
@@ -137,7 +183,16 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			printf("remove_edge %llu %llu\n", a, b);
 #endif
 
-			ret = g.remove_edge(a,b);
+			// first backup
+			if (backupClient != 0)
+				ret = backupClient->remove_edge(a,b);
+			else 
+				ret = 1;
+
+			if (ret == 1) // if successfully backup
+				ret = g.remove_edge(a,b);
+			else // otherwise
+				ret = -100;
 			if (ret == 1){
 				char buf[100];
 				int len = sprintf(buf, "{\"node_a_id\":%llu,\"node_b_id\":%llu}", a, b);
@@ -151,7 +206,13 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 #if DEBUG
 				printf("400\n");
 #endif
+			}else if (ret == -100){
+				mg_send_head(nc, 500, 0, "Content-Type: text/json");
+#if DEBUG
+				printf("500\n");
+#endif
 			}
+
 		}else if (strncmp(func, "get_node", func_len)==0){
 			int ret = parse_json(hm->body.p, hm->body.len,tok,n_tok);
 			t = find_json_token(tok, "node_id");
@@ -321,6 +382,11 @@ int main(int argc, char** argv) {
 		strcpy(port, argv[3]);
 	}
 	printf("listening on port %s\n", port);
+
+	if (strlen(backupIp) != 0){
+		backupClient = new BackupClient();
+		backupClient->connect(backupIp);
+	}
 
 	mg_mgr mgr;
 	mg_connection *conn;

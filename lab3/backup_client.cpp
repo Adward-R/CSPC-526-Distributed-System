@@ -9,10 +9,13 @@ int BackupClient::connect(char* backupIp){
 	client = boost::shared_ptr<BackupServiceClient> (new BackupServiceClient(protocol));
 
 	try{
+		printf("Connecting to backup server %s\n", backupIp);
 		transport->open();
 	} catch (TException& tx){
+		printf("%s\n", tx.what());
 		return 0;
 	}
+	printf("Successfully connected to backup server %s\n", backupIp);
 	return 1;
 }
 
