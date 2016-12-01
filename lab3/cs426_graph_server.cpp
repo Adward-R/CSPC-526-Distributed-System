@@ -13,6 +13,7 @@ using namespace std;
 #define ENDPOINT_LEN (sizeof(ENDPOINT)-1)
 
 Graph g;
+char backupIp[20] = "";
 
 uint64_t tok2int(json_token *tok){
 	uint64_t res = 0;
@@ -299,9 +300,27 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 
 int main(int argc, char** argv) {
 	char port[10] = "8000";
-	if (argc >= 2){
-		strcpy(port, argv[1]);
+
+	for (char opt; (opt = getopt(argc, argv, "b:")) != -1;){
+		switch (opt){
+			case 'b':
+				strcpy(backupIp, optarg);
+				break;
+			default: /* '?' */
+				printf("Usage: %s [-b <backupIp>] <port>\n", argv[0]);
+				return 0;
+		}
 	}
+	if (strlen(backupIp) != 0)
+		printf("backup IP: %s\n", backupIp);
+
+	if (strlen(backupIp) == 0 && argc >= 2){
+		strcpy(port, argv[1]);
+	}else if (strlen(backupIp) != 0 && argc >= 4){
+		strcpy(port, argv[3]);
+	}
+	printf("listening on port %s\n", port);
+
 	mg_mgr mgr;
 	mg_connection *conn;
 

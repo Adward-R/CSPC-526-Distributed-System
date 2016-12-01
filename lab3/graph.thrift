@@ -14,5 +14,5 @@ struct Graph_ops {
 }
 
 service GraphService {
-    i64 mutate(const Graph_ops& graph_ops)
+    i64 mutate(Graph_ops& graph_ops)
 }
