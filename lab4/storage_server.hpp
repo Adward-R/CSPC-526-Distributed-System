@@ -21,17 +21,22 @@ class StorageServer{
 		int setPartitionId(int);
 		int whichPartition(int);
 
-		// These are updates, return -100 if backup fails, otherwise return whatever graph returns
+		// These are updates, otherwise return whatever graph returns
 		int add_node(uint64_t node_id);
 		// return 1 on success, 0 if the edge exists, -1 if either node does not exist or a == b
 		int add_edge(uint64_t a, uint64_t b);
-		int remove_node(uint64_t node_id); // this will not be called
+		// [Deprecated] this will not be called
+		int remove_node(uint64_t node_id); 
+		// return 1 on success, -1 if the edge not exist
 		int remove_edge(uint64_t a, uint64_t b);
-		// These are queries, just call graph and return whatever graph returns
+		// return 1 on success, 0 if the node does not exist
 		int get_node(uint64_t node_id);
+		// return 1 on success, 0 if the edge does not exist, -1 if either node does not exist or a == b
 		int get_edge(uint64_t a, uint64_t b);
+		// return 1 on success, -1 if the node does not exist
 		int get_neighbors(uint64_t node_id, std::vector<uint64_t> &res);
-		int shortest_path(uint64_t a, uint64_t b); // this will not be called
+		// [Deprecated] this will not be called
+		int shortest_path(uint64_t a, uint64_t b); 
 };
 
 #endif /* STORAGE_SERVER_HPP */

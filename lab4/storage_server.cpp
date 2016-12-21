@@ -112,7 +112,7 @@ int StorageServer::add_edge(uint64_t a, uint64_t b){
 	return ret;
 }
 
-// this will not be called
+// [Deprecated] this will not be called
 int StorageServer::remove_node(uint64_t node_id){
 	pthread_mutex_lock(&mutex);
 	int ret = g.remove_node(node_id);
