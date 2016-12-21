@@ -413,5 +413,7 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
+	pthread_join(thriftserver_thread, NULL);
+
 	return 0;
 }
