@@ -98,8 +98,8 @@ int StorageServer::add_edge(uint64_t a, uint64_t b){
 			// b->a succeeds, add a->b as well
 			ret = g.add_edge(a, b);
 		} else { // otherwise, this update is from the main partition
-			// b should = partitionId
-			if (b != partitionId){
+			// pb should = partitionId
+			if (pb != partitionId){
 				printf("[StorageServer::add_edge] both nodes %lu and %lu does not belong to this partition\n", a, b);
 				ret = -100;
 				break;
@@ -178,8 +178,8 @@ int StorageServer::remove_edge(uint64_t a, uint64_t b){
 			}
 			ret = g.remove_edge(a, b);
 		} else { // otherwise, this update is from the main partition
-			// b should = partitionId
-			if (b != partitionId){
+			// pb should = partitionId
+			if (pb != partitionId){
 				printf("[StorageServer::remove_edge] both nodes %lu and %lu does not belong to this partition\n", a, b);
 				ret = -100;
 				break;
