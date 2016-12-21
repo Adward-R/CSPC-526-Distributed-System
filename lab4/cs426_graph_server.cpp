@@ -342,6 +342,19 @@ void* run_webserver(void* arg){
 	return 0;
 }
 
+void* run_thriftserver(void* arg){
+	int port = *(int*) arg;
+	printf("thrift server listening on %d\n", port);
+	TThreadedServer server(
+			boost::make_shared<BackupServiceProcessor>(boost::make_shared<BackupServer>(&storageServer)), // pass  the storageServer to it, so it can update the storageServer
+			boost::make_shared<TServerSocket>(port), //port
+			boost::make_shared<TBufferedTransportFactory>(),
+			boost::make_shared<TBinaryProtocolFactory>());
+
+	server.serve();
+	return 0;
+}
+
 int main(int argc, char** argv) {
 	char backupIp[20] = "";
 	string allIps[3];
@@ -377,17 +390,6 @@ int main(int argc, char** argv) {
 	parseIpAndPort(argv[7], allIps[2], thriftPort[2]);
 	printf("listening on %s\npartitionId = %d\n%s:%d\n%s:%d\n%s:%d\n", port, partitionId, allIps[0].c_str(), thriftPort[0], allIps[1].c_str(), thriftPort[1], allIps[2].c_str(), thriftPort[2]);
 
-	for (int i = 0; i < 3; i++){
-		if (i == partitionId)
-			continue;
-		//int ret = storageServer.connectBackupClient(allIps[i], thriftPort[i]);
-		int ret = storageServer.setupPartitions(partitionId, 3, allIps, thriftPort);
-		if (ret == 0){
-			printf("[main] Fail to connect to the backup server %s:%d\n", allIps[i].c_str(), thriftPort[i]);
-			return 0;
-		}
-	}
-
 	// Start web server
 	pthread_t webserver_thread;
 
@@ -398,14 +400,18 @@ int main(int argc, char** argv) {
 
 #if 1
 	// start thrift backup server
-	TThreadedServer server(
-			boost::make_shared<BackupServiceProcessor>(boost::make_shared<BackupServer>(&storageServer)), // pass  the storageServer to it, so it can update the storageServer
-			boost::make_shared<TServerSocket>(thriftPort[partitionId]), //port
-			boost::make_shared<TBufferedTransportFactory>(),
-			boost::make_shared<TBinaryProtocolFactory>());
-
-	server.serve();
+	pthread_t thriftserver_thread;
+	if (pthread_create(&thriftserver_thread, NULL, run_thriftserver, &thriftPort[partitionId])){
+		fprintf(stderr, "Error creating thrift server thread\n");
+		return 0;
+	}
 #endif
+
+	int ret = storageServer.setupPartitions(partitionId, 3, allIps, thriftPort);
+	if (ret == 0){
+		printf("[main] Fail to connect to the other partitions\n");
+		return 0;
+	}
 
 	return 0;
 }

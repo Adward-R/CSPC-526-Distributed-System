@@ -14,9 +14,13 @@ int StorageServer::setupPartitions(int _partitionId, int _nPart, string *ip, int
 		if (i == partitionId)
 			continue;
 		partitionClient[i] = new BackupClient();
-		int ret = partitionClient[i]->connect(ip[i].c_str(), port[i]);
-		if (ret != 1)
-			return 0;
+		// keep try connecting
+		while (1){
+			int ret = partitionClient[i]->connect(ip[i].c_str(), port[i]);
+			if (ret == 1)
+				break;
+			sleep(1);
+		}
 	}
 	return 1;
 }
