@@ -36,6 +36,17 @@ int StorageServer::add_node(uint64_t node_id){
 	return ret;
 }
 
+// ordering if a and b are at diff partitions:
+// part a		part b
+// lock a
+// a != b
+// a exist
+// 				lock b
+// 				b exist
+// 				add b->a
+//				unlock b
+// add a->b
+// unlock a
 int StorageServer::add_edge(uint64_t a, uint64_t b){
 	pthread_mutex_lock(&mutex);
 	int ret = 1;
@@ -109,15 +120,74 @@ int StorageServer::remove_node(uint64_t node_id){
 	return ret;
 }
 
+// ordering if a and b are at diff partitions:
+// part a		part b
+// lock a
+// a exist
+// 				lock b
+// 				b exist
+// 				b->a exist
+// 				remove b->a
+// 				unlock b
+// remove a->b (if part b OK)
+// unlock a
 int StorageServer::remove_edge(uint64_t a, uint64_t b){
 	pthread_mutex_lock(&mutex);
 	int ret = 1;
-
-	if (ret == 1) // if successfully backup
-		ret = g.remove_edge(a,b);
-	else // otherwise
-		ret = -100;
-
+	do {
+		if (a == b){
+			ret = -1;
+			break;
+		}
+		// first check partitions of a and b
+		int pa = whichPartition(a), pb = whichPartition(b);
+		// put the one with lower partition # at a
+		if (pa > pb){
+			swap(a, b);
+			swap(pa, pb);
+		}
+		// if this is the main partition
+		if (pa == partitionId){
+			// if a not exists, return -1
+			if (g.get_node(a) == 0){
+				ret = -1;
+				break;
+			}
+			// if b belongs to this partition
+			if (pb == partitionId){
+				// if b not exists, return -1
+				if (g.get_node(b) == 0){
+					ret = -1;
+					break;
+				}
+				// try remove b->a
+				// if b->a not exists, return -1
+				if (g.remove_edge(b, a) == -1){
+					ret = -1;
+					break;
+				}
+			}else { // otherwise, b belong to another (largar) partition, send to it
+				ret = partitionClient[pb]->remove_edge(b, a);
+				// if the other partition fails (b not exist, or b->a not exists)
+				if (ret != 1)
+					break;
+			}
+			ret = g.remove_edge(a, b);
+		} else { // otherwise, this update is from the main partition
+			// b should = partitionId
+			if (b != partitionId){
+				printf("[StorageServer::remove_edge] both nodes does not belong to this partition\n");
+				ret = -100;
+				break;
+			}
+			// if b not exists
+			if (g.get_node(b) == 0){
+				ret = -1;
+				break;
+			}
+			ret = g.remove_edge(b, a);
+		}
+	} while (0);
 	pthread_mutex_unlock(&mutex);
 	return ret;
 }

@@ -42,13 +42,10 @@ int Graph::remove_node(uint64_t node_id){
 
 // return 1 on success, -1 if the edge not exist
 int Graph::remove_edge(uint64_t a, uint64_t b){
-	if (nodes.find(a) == nodes.end() || nodes.find(b) == nodes.end())
-		return -1;
 	if (nodes[a].find(b) == nodes[a].end())
 		return -1;
 
 	nodes[a].erase(b);
-	nodes[b].erase(a);
 	return 1;
 }
 
