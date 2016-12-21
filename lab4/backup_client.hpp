@@ -25,6 +25,8 @@ class BackupClient{
 		int add_edge(uint64_t , uint64_t );
 		int remove_node(uint64_t );
 		int remove_edge(uint64_t , uint64_t );
+		// return 1 if node exist, -1 if not, 0 if fail
+		int get_node(uint64_t );
 };
 
 #endif /* BACKUP_CLIENT_HPP */

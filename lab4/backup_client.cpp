@@ -70,3 +70,19 @@ int BackupClient::remove_edge(uint64_t _a, uint64_t _b){
 	}
 	return 1;
 }
+
+int BackupClient::get_node(uint64_t _node){
+	if (_node > 0x7fffffffffffffff)
+		printf("[BackupClient::get_node] Warning: node id exceeds int64_t range\n");
+	int64_t node = (int64_t) _node;
+	try {
+		int64_t ret = client->backup(Operation::GET_NODE, node, -1);
+		if (ret == 1)
+			return 1;
+		else 
+			return -1;
+	} catch (TException& tx){
+		printf("[BackupClient::get_node] Exception: %s\n", tx.what());
+		return 0;
+	}
+}

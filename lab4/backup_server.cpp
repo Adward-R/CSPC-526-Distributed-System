@@ -19,7 +19,11 @@ int64_t BackupServer::backup(const Operation::type op, const int64_t param1, con
 		case Operation::REMOVE_EDGE:
 			ret = storageServer->remove_edge((uint64_t) param1, (uint64_t) param2);
 			break;
+		case Operator::GET_NODE:
+			ret = storageServer->get_node((uint64_t) param1);
+			break;
 		default:
 			break;
 	}
+	return ret;
 }
