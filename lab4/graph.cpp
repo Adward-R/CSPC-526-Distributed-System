@@ -15,13 +15,9 @@ int Graph::add_node(uint64_t node_id){
 
 // return 1 on success, 0 if the edge exists, -1 if either node does not exist or a == b
 int Graph::add_edge(uint64_t a, uint64_t b){
-	if (a==b || nodes.find(a) == nodes.end() || nodes.find(b) == nodes.end())
-		return -1;
-
 	// if a does not link with b, insert the edge
 	if (nodes[a].find(b)==nodes[a].end()){
 		nodes[a].insert(b);
-		nodes[b].insert(a);
 		return 1;
 	}
 	return 0;
