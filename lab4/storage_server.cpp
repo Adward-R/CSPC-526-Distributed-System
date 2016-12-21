@@ -4,24 +4,22 @@ StorageServer::StorageServer() {
 	backupClient = 0;
 }
 
-int StorageServer::connectBackupClient(char *ip){
+int StorageServer::connectBackupClient(char *ip, int port){
 	backupClient = new BackupClient();
-	int ret = backupClient->connect(ip);
+	int ret = backupClient->connect(ip, port);
 	return ret;
 }
 
+int StorageServer::setPartitionId(int _partitionId){
+	partitionId = _partitionId;
+}
+
+int StorageServer::whichPartition(int node){
+	return node % 3;
+}
+
 int StorageServer::add_node(uint64_t node_id){
-	int ret = 1;
-	// if have backup, first backup
-	if (backupClient != 0)
-		ret = backupClient->add_node(node_id);
-
-	if (ret == 1) // if successfully backup
-		ret = g.add_node(node_id);
-	else // otherwise
-		ret = -100;
-
-	return ret;
+	return g.add_node(node_id);
 }
 
 int StorageServer::add_edge(uint64_t a, uint64_t b){
@@ -38,19 +36,11 @@ int StorageServer::add_edge(uint64_t a, uint64_t b){
 	return ret;
 }
 
+// this will not be called
 int StorageServer::remove_node(uint64_t node_id){
-	int ret = 1;
-	// if have backup, first backup
-	if (backupClient != 0)
-		ret = backupClient->remove_node(node_id);
-
-	if (ret == 1) // if successfully backup
-		ret = g.remove_node(node_id);
-	else // otherwise
-		ret = -100;
-
-	return ret;
+	return g.remove_node(node_id);
 }
+
 int StorageServer::remove_edge(uint64_t a, uint64_t b){
 	int ret = 1;
 	// if have backup, first backup

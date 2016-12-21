@@ -2,8 +2,8 @@
 
 BackupClient::BackupClient(){
 }
-int BackupClient::connect(char* backupIp){
-	socket = boost::shared_ptr<TTransport> (new TSocket(backupIp, THRIFT_PORT));
+int BackupClient::connect(char* backupIp, int port){
+	socket = boost::shared_ptr<TTransport> (new TSocket(backupIp, port));
 	transport = boost::shared_ptr<TTransport> (new TBufferedTransport(socket));
 	protocol = boost::shared_ptr<TProtocol> (new TBinaryProtocol(transport));
 	client = boost::shared_ptr<BackupServiceClient> (new BackupServiceClient(protocol));

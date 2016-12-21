@@ -6,7 +6,6 @@
 #include <thrift/transport/TTransportUtils.h>
 #include "gen-cpp/BackupService.h"
 
-#define THRIFT_PORT 9091
 using namespace apache::thrift;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::transport;
@@ -20,7 +19,7 @@ class BackupClient{
 
 		BackupClient();
 		// return 1 on success, 0 otherwise
-		int connect(char* ip);
+		int connect(char* ip, int port);
 		int add_node(uint64_t );
 		int add_edge(uint64_t , uint64_t );
 		int remove_node(uint64_t );

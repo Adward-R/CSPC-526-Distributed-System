@@ -57,6 +57,14 @@ int check_uri_valid(mg_str *s){
 	return 1;
 }
 
+void parseIpAndPort(char* s, char* ip, int& port){
+	int i;
+	for (i = 0; s[i] != ':'; i++)
+		ip[i] = s[i];
+	ip[i] = 0;
+	sscanf(s+i+1, "%d", &port);
+}
+
 StorageServer storageServer;
 
 #define DEBUG 0
@@ -87,7 +95,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			ret = storageServer.add_node(node_id);
 			if (ret == 1){
 				char buf[100];
-				int len = sprintf(buf, "{\"node_id\":%llu}", node_id);
+				int len = sprintf(buf, "{\"node_id\":%lu}", node_id);
 				mg_send_head(nc, 200, len, "Content-Type: text/json");
 				mg_printf(nc, "%.*s", len, buf);
 #if DEBUG
@@ -117,7 +125,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			ret = storageServer.add_edge(a,b);
 			if (ret == 1){
 				char buf[100];
-				int len = sprintf(buf, "{\"node_a_id\":%llu,\"node_b_id\":%llu}", a, b);
+				int len = sprintf(buf, "{\"node_a_id\":%lu,\"node_b_id\":%lu}", a, b);
 				mg_send_head(nc, 200, len, "Content-Type: text/json");
 				mg_printf(nc, "%.*s", len, buf);
 #if DEBUG
@@ -151,7 +159,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			ret = storageServer.remove_node(node_id);
 			if (ret == 1){
 				char buf[100];
-				int len = sprintf(buf, "{\"node_id\":%llu}", node_id);
+				int len = sprintf(buf, "{\"node_id\":%lu}", node_id);
 				mg_send_head(nc, 200, len, "Content-Type: text/json");
 				mg_printf(nc, "%.*s", len, buf);
 #if DEBUG
@@ -182,7 +190,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 			ret = storageServer.remove_edge(a,b);
 			if (ret == 1){
 				char buf[100];
-				int len = sprintf(buf, "{\"node_a_id\":%llu,\"node_b_id\":%llu}", a, b);
+				int len = sprintf(buf, "{\"node_a_id\":%lu,\"node_b_id\":%lu}", a, b);
 				mg_send_head(nc, 200, len, "Content-Type: text/json");
 				mg_printf(nc, "%.*s", len, buf);
 #if DEBUG
@@ -270,7 +278,7 @@ static void ev_handler(mg_connection *nc, int ev, void *ev_data) {
 					s<<','<<neighbors[i];
 				s<<"]}";
 				mg_send_head(nc, 200, s.str().size(), "Content-Type: text/json");
-				mg_printf(nc,"%.*s", s.str().size(), s.str().c_str());
+				mg_printf(nc,"%.*s", (int)s.str().size(), s.str().c_str());
 #if DEBUG
 				printf("200, %s\n", s.str().c_str());
 #endif
@@ -337,32 +345,44 @@ void* run_webserver(void* arg){
 
 int main(int argc, char** argv) {
 	char backupIp[20] = "";
+	char allIps[3][20] = {"", "", ""};
+	int thriftPort[3];
 	char port[10] = "8000";
+	int partitionId = -1;
 
-	for (char opt; (opt = getopt(argc, argv, "b:")) != -1;){
+#if 0
+	for (char opt; (opt = getopt(argc, argv, "p:l:")) != -1;){
 		switch (opt){
-			case 'b':
-				strcpy(backupIp, optarg);
+			case 'p':
+				sscanf(optarg, "%d", &partitionId);
+				break;
+			case 'l':
+				printf("%s\n", optarg);
 				break;
 			default: /* '?' */
 				printf("Usage: %s [-b <backupIp>] <port>\n", argv[0]);
 				return 0;
 		}
 	}
-	if (strlen(backupIp) != 0)
-		printf("backup IP: %s\n", backupIp);
+#endif
 
-	if (strlen(backupIp) == 0 && argc >= 2){
-		strcpy(port, argv[1]);
-	}else if (strlen(backupIp) != 0 && argc >= 4){
-		strcpy(port, argv[3]);
-	}
-	printf("listening on port %s\n", port);
+	for (int i = 0; i < argc; i++)
+		printf("%s ",argv[i]);
+	printf("\n");
 
-	if (strlen(backupIp) != 0){
-		int ret = storageServer.connectBackupClient(backupIp);
+	strcpy(port, argv[1]);
+	sscanf(argv[3], "%d", &partitionId);
+	parseIpAndPort(argv[5], allIps[0], thriftPort[0]);
+	parseIpAndPort(argv[6], allIps[1], thriftPort[1]);
+	parseIpAndPort(argv[7], allIps[2], thriftPort[2]);
+	printf("listening on %s\npartitionId = %d\n%s:%d\n%s:%d\n%s:%d\n", port, partitionId, allIps[0], thriftPort[0], allIps[1], thriftPort[1], allIps[2], thriftPort[2]);
+
+	for (int i = 0; i < 3; i++){
+		if (i == partitionId)
+			continue;
+		int ret = storageServer.connectBackupClient(allIps[i], thriftPort[i]);
 		if (ret == 0){
-			printf("[main] Fail to connect to the backup server %s\n", backupIp);
+			printf("[main] Fail to connect to the backup server %s:%d\n", allIps[i], thriftPort[i]);
 			return 0;
 		}
 	}
@@ -379,7 +399,7 @@ int main(int argc, char** argv) {
 	// start thrift backup server
 	TThreadedServer server(
 			boost::make_shared<BackupServiceProcessor>(boost::make_shared<BackupServer>(&storageServer)), // pass  the storageServer to it, so it can update the storageServer
-			boost::make_shared<TServerSocket>(THRIFT_PORT), //port
+			boost::make_shared<TServerSocket>(thriftPort[partitionId]), //port
 			boost::make_shared<TBufferedTransportFactory>(),
 			boost::make_shared<TBinaryProtocolFactory>());
 
