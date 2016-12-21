@@ -19,7 +19,7 @@ class BackupClient{
 
 		BackupClient();
 		// return 1 on success, 0 otherwise
-		int connect(char* ip, int port);
+		int connect(const char* ip, int port);
 		int add_node(uint64_t );
 		int add_edge(uint64_t , uint64_t );
 		int remove_node(uint64_t );

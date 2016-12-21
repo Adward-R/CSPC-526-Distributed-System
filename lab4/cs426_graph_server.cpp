@@ -57,11 +57,10 @@ int check_uri_valid(mg_str *s){
 	return 1;
 }
 
-void parseIpAndPort(char* s, char* ip, int& port){
+void parseIpAndPort(char* s, string &ip, int& port){
 	int i;
 	for (i = 0; s[i] != ':'; i++)
-		ip[i] = s[i];
-	ip[i] = 0;
+		ip += s[i];
 	sscanf(s+i+1, "%d", &port);
 }
 
@@ -345,7 +344,7 @@ void* run_webserver(void* arg){
 
 int main(int argc, char** argv) {
 	char backupIp[20] = "";
-	char allIps[3][20] = {"", "", ""};
+	string allIps[3];
 	int thriftPort[3];
 	char port[10] = "8000";
 	int partitionId = -1;
@@ -372,17 +371,19 @@ int main(int argc, char** argv) {
 
 	strcpy(port, argv[1]);
 	sscanf(argv[3], "%d", &partitionId);
+	partitionId--; // the input partition # is 1,2,3, but we need 0,1,2
 	parseIpAndPort(argv[5], allIps[0], thriftPort[0]);
 	parseIpAndPort(argv[6], allIps[1], thriftPort[1]);
 	parseIpAndPort(argv[7], allIps[2], thriftPort[2]);
-	printf("listening on %s\npartitionId = %d\n%s:%d\n%s:%d\n%s:%d\n", port, partitionId, allIps[0], thriftPort[0], allIps[1], thriftPort[1], allIps[2], thriftPort[2]);
+	printf("listening on %s\npartitionId = %d\n%s:%d\n%s:%d\n%s:%d\n", port, partitionId, allIps[0].c_str(), thriftPort[0], allIps[1].c_str(), thriftPort[1], allIps[2].c_str(), thriftPort[2]);
 
 	for (int i = 0; i < 3; i++){
 		if (i == partitionId)
 			continue;
-		int ret = storageServer.connectBackupClient(allIps[i], thriftPort[i]);
+		//int ret = storageServer.connectBackupClient(allIps[i], thriftPort[i]);
+		int ret = storageServer.setupPartitions(partitionId, 3, allIps, thriftPort);
 		if (ret == 0){
-			printf("[main] Fail to connect to the backup server %s:%d\n", allIps[i], thriftPort[i]);
+			printf("[main] Fail to connect to the backup server %s:%d\n", allIps[i].c_str(), thriftPort[i]);
 			return 0;
 		}
 	}
@@ -390,7 +391,7 @@ int main(int argc, char** argv) {
 	// Start web server
 	pthread_t webserver_thread;
 
-	if(pthread_create(&webserver_thread, NULL, run_webserver, port)) {
+	if (pthread_create(&webserver_thread, NULL, run_webserver, port)) {
 		fprintf(stderr, "Error creating webserver thread\n");
 		return 0;
 	}

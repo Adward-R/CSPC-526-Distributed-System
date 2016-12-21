@@ -1,17 +1,21 @@
 #ifndef STORAGE_SERVER_HPP
 #define STORAGE_SERVER_HPP
 
+#include <string>
 #include "graph.hpp"
 #include "backup_client.hpp"
 
 class StorageServer{
 	public:
 		Graph g;
-		BackupClient *backupClient;
+		// clients to other partitions. partitionClient[i] is the client to the i-th partition
+		BackupClient **partitionClient;
+		int nPart;
 		int partitionId;
 
 		StorageServer();
-		int connectBackupClient(char *ip, int port);
+		//int connectBackupClient(char *ip, int port);
+		int setupPartitions(int _partitionId, int _nPart, std::string *ip, int *port);
 		int setPartitionId(int);
 		static int whichPartition(int);
 
