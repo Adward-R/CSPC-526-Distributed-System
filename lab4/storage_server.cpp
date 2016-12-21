@@ -199,9 +199,63 @@ int StorageServer::get_node(uint64_t node_id){
 	return ret;
 }
 
+// ordering if a and b are at diff partitions:
+// part a		part b
+// lock a
+// a exist
+// 				lock b
+// 				b exist
+// 				b->a exist
+// 				unlock b
+// unlock a
 int StorageServer::get_edge(uint64_t a, uint64_t b){
 	pthread_mutex_lock(&mutex);
-	int ret = g.get_edge(a,b);
+	int ret = 1;
+	do {
+		if (a == b){
+			ret = -1;
+			break;
+		}
+		// first check partitions of a and b
+		int pa = whichPartition(a), pb = whichPartition(b);
+		// put the one with lower partition # at a
+		if (pa > pb){
+			swap(a, b);
+			swap(pa, pb);
+		}
+		// if this is the main partition
+		if (pa == partitionId){
+			// if a not exists, return -1
+			if (g.get_node(a) == 0){
+				ret = -1;
+				break;
+			}
+			// if b belongs to this partition
+			if (pb == partitionId){
+				// if b not exists, return -1
+				if (g.get_node(b) == 0){
+					ret = -1;
+					break;
+				}
+				ret = g.get_edge(b, a);
+			}else { // otherwise, b belong to another (largar) partition, send to it
+				ret = partitionClient[pb]->get_edge(b, a);
+			}
+		} else { // otherwise, this update is from the main partition
+			// b should = partitionId
+			if (b != partitionId){
+				printf("[StorageServer::get_edge] both nodes does not belong to this partition\n");
+				ret = -100;
+				break;
+			}
+			// if b not exists
+			if (g.get_node(b) == 0){
+				ret = -1;
+				break;
+			}
+			ret = g.get_edge(b, a);
+		}
+	} while (0);
 	pthread_mutex_unlock(&mutex);
 	return ret;
 }
