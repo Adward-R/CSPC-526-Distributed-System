@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "graph.hpp"
 using namespace std;
 

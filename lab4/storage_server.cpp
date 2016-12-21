@@ -205,8 +205,8 @@ int StorageServer::get_node(uint64_t node_id){
 // a exist
 // 				lock b
 // 				b exist
-// 				b->a exist
 // 				unlock b
+// a->b exist
 // unlock a
 int StorageServer::get_edge(uint64_t a, uint64_t b){
 	pthread_mutex_lock(&mutex);
@@ -237,23 +237,18 @@ int StorageServer::get_edge(uint64_t a, uint64_t b){
 					ret = -1;
 					break;
 				}
-				ret = g.get_edge(b, a);
-			}else { // otherwise, b belong to another (largar) partition, send to it
-				ret = partitionClient[pb]->get_edge(b, a);
+			}else { // otherwise, b belong to another (largar) partition, check b there
+				ret = partitionClient[pb]->get_node(b);
+				// if b not exists, return -1
+				if (ret != 1){
+					ret = -1;
+					break;
+				}
 			}
-		} else { // otherwise, this update is from the main partition
-			// b should = partitionId
-			if (b != partitionId){
-				printf("[StorageServer::get_edge] both nodes does not belong to this partition\n");
-				ret = -100;
-				break;
-			}
-			// if b not exists
-			if (g.get_node(b) == 0){
-				ret = -1;
-				break;
-			}
-			ret = g.get_edge(b, a);
+			ret = g.get_edge(a, b);
+		} else { // should not happen
+			printf("[StorageServer::get_edge] Error: a does not belong to this partition\n");
+			ret = -100;
 		}
 	} while (0);
 	pthread_mutex_unlock(&mutex);
