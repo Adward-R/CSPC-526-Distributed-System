@@ -2,16 +2,16 @@
 ----
 By Yuliang Li & Keyang Dong
 
-# Lab 3 Work-split
+# Lab 4 Work-split
 
-Learn and install the thrift together.
+Design the locking scheme together
 
 ## Yuliang Li
 
-- Write the thrift client (backup_client.cpp/hpp)
-- Refactor the old code so that thrift server can use existing objects (storage_server.cpp/hpp)
+- Refactor the storage_server.cpp/hpp to lock and RPC other partitoins
+- Refactor the cs426_graph_server.cpp to support try connect to other partition until success
 
 ## Keyang Dong
 
-- Designed the thrift interface (backup_interface.thrift)
-- Write the thrift server (backup_server.cpp/hpp)
+- Refactor the thrift and BackupClient/BackupServer to support new thrift interface get_node, used for checking node existence on other partitions
+- Change the graph.cpp/hpp (remove the node existence checking from add_edge, remove_edge, and get_edge, which will be done in storage_server)
